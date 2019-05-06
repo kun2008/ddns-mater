@@ -1,0 +1,44 @@
+language: python
+python:
+  - "2.7"
+  - "3.7"
+
+dist: xenial
+
+# os: 
+#   - linux
+#   - osx
+
+
+# command to install dependencies 
+install:
+  - pip install pyinstaller
+
+# command to run tests
+script:
+  - sed -i -e "s/\${BUILD_SOURCEBRANCHNAME}/${TRAVIS_BRANCH}/" -e "s/\${BUILD_DATE}/$(date --iso-8601=seconds)/" run.py
+  - pyinstaller --onefile --noconfirm --clean ./.build/ddns.spec
+  - ./dist/ddns || test -e "config.json"
+
+git:
+  depth: 2
+
+deploy:
+  - provider: releases
+    api_key: "${GH_TOKEN}"
+    skip_cleanup: true
+    file:
+      - "dist/ddns"
+    on:
+      tags: true
+      branch: master
+      python: '3.7'
+  - provider: pypi
+    user: newfuture-bot
+    password: "${PYPI_PWD}"
+    skip_cleanup: true
+    distributions: "sdist bdist_wheel" # Your distributions here
+    on:
+      tags: true
+      branch: master
+      python: '3.7'
